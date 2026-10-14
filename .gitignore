@@ -1,0 +1,86 @@
+# ---------------------------------------------------------------
+# .gitignore for resilient-data-importer
+# Rules here apply to this folder and every subfolder.
+# ---------------------------------------------------------------
+
+# Byte-compiled / cached Python files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Packaging / build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+wheels/
+pip-wheel-metadata/
+MANIFEST
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.python-version
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Tool caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+.pytype/
+.tox/
+.nox/
+.cache/
+
+# Coverage output (commit a text report instead, e.g. docs/coverage.txt)
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+*.cover
+nosetests.xml
+
+# Logs
+*.log
+logs/
+
+# Runtime output of the importer (generated JSON database)
+output/
+*.db.json
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# AI assistant / local tool settings
+.claude/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
