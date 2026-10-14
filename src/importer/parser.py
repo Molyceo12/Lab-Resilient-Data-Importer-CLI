@@ -108,9 +108,10 @@ class CsvParser:
                     row_count += 1
                     yield self._build_row(reader.line_num, headers, values)
             except (csv.Error, UnicodeDecodeError) as exc:
+                # Decoding happens in buffered chunks, so the line may be unknown (0).
+                where = f" near line {reader.line_num}" if reader.line_num else ""
                 raise FileFormatError(
-                    f"Cannot read CSV file {csv_path} near line {reader.line_num}: "
-                    f"{exc}"
+                    f"Cannot read CSV file {csv_path}{where}: {exc}"
                 ) from exc
             else:
                 logger.info("Read %d data rows from %s", row_count, csv_path)
