@@ -55,6 +55,7 @@ branch = true
 [tool.coverage.report]
 show_missing = true
 fail_under = 90
+exclude_also = ["@(abc\\.)?abstractmethod"]
 
 [tool.mypy]
 python_version = "3.11"
