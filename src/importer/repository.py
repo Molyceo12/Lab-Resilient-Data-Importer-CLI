@@ -76,11 +76,10 @@ def atomic_write(path: Path) -> Iterator[TextIO]:
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             yield handle
-    except BaseException:
-        tmp_path.unlink(missing_ok=True)
-        raise
-    else:
         os.replace(tmp_path, path)
+    finally:
+        # After a successful replace the temp file is gone; otherwise remove it.
+        tmp_path.unlink(missing_ok=True)
 
 
 class JsonUserRepository(UserRepository):
