@@ -43,6 +43,19 @@ src = ["src", "tests"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "SIM"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"
+
+[tool.coverage.run]
+source = ["importer"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 90
+
 [tool.mypy]
 python_version = "3.11"
 strict = true
