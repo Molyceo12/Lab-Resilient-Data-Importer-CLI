@@ -55,33 +55,38 @@ the database. Bad rows are skipped and reported, good rows are saved.
 git clone https://github.com/Molyceo12/Lab-Resilient-Data-Importer-CLI.git
 cd Lab-Resilient-Data-Importer-CLI
 
-# 2. Install dependencies (Poetry creates the virtual environment in .venv/)
-poetry install
+# 2. Install Poetry (skip if already installed)
+python -m pip install poetry
 
-# 3. Install the pre-commit hooks (Black, ruff, mypy run before every commit)
-poetry run pre-commit install
+# 3. Install dependencies (Poetry creates the virtual environment in .venv/)
+python -m poetry install
+
+# 4. Install the pre-commit hooks (Black, ruff, mypy run before every commit)
+python -m poetry run python -m pre_commit install
 ```
+
+> **Why `python -m ...`?** It runs each tool through Python, so the commands work
+> even when `poetry`, `pytest` or `pre-commit` are not on your PATH or their
+> `.exe` launchers are blocked (for example by Windows Device Guard). If `poetry`
+> works directly on your machine, `poetry install` and `poetry run ...` do the same.
+>
+> If mypy's compiled build is blocked on Windows, install its pure-Python build:
+> `python -m poetry run python -m pip install --force-reinstall --no-deps --no-binary mypy "mypy==2.4.0"`
 
 Without Poetry, use pip:
 
 ```bash
 python -m venv .venv
 .venv\Scripts\activate          # Windows  (Linux/macOS: source .venv/bin/activate)
-pip install -r requirements.txt
-pip install -e .
+python -m pip install -r requirements.txt
+python -m pip install -e .
+python -m importer data/sample_users.csv
 ```
-
-> **Windows with Device Guard / App Control:** if `.exe` launchers such as
-> `poetry`, `pytest` or `pre-commit` are blocked, run them through Python instead,
-> e.g. `python -m poetry run python -m importer ...` or
-> `python -m poetry run python -m pytest`. If mypy's compiled build is blocked,
-> install its pure-Python build:
-> `pip install --force-reinstall --no-deps --no-binary mypy "mypy==2.4.0"`.
 
 ## Usage
 
 ```bash
-poetry run python -m importer <csv_file> [--db PATH] [--log-level LEVEL] [--log-file PATH] [-v]
+python -m poetry run python -m importer <csv_file> [--db PATH] [--log-level LEVEL] [--log-file PATH] [-v]
 ```
 
 | Option | Default | Description |
@@ -93,7 +98,7 @@ poetry run python -m importer <csv_file> [--db PATH] [--log-level LEVEL] [--log-
 | `-v`, `--verbose` | off | Also print log lines in the terminal |
 | `-h`, `--help` | | Show help |
 
-The `importer` console script is also installed: `poetry run importer data/sample_users.csv`.
+The `importer` console script is also installed, so `poetry run importer data/sample_users.csv` works where `.exe` launchers are allowed.
 
 ### Exit codes
 
@@ -107,13 +112,13 @@ The `importer` console script is also installed: `poetry run importer data/sampl
 
 ```bash
 # Successful import
-poetry run python -m importer data/sample_users.csv
+python -m poetry run python -m importer data/sample_users.csv
 
 # Rows with errors and duplicates
-poetry run python -m importer data/invalid_users.csv
+python -m poetry run python -m importer data/invalid_users.csv
 
 # Custom database, debug logs shown in the terminal
-poetry run python -m importer data/sample_users.csv --db output/test.json --log-level DEBUG -v
+python -m poetry run python -m importer data/sample_users.csv --db output/test.json --log-level DEBUG -v
 
 # Start again with an empty database
 rm output/users.json            # PowerShell: Remove-Item output\users.json
@@ -300,13 +305,13 @@ terminal.
 
 ```bash
 # Run all tests
-poetry run pytest
+python -m poetry run python -m pytest
 
 # Run with coverage (fails if coverage drops below 90%)
-poetry run pytest --cov --cov-report=term-missing
+python -m poetry run python -m pytest --cov --cov-report=term-missing
 
 # Optional HTML report in htmlcov/
-poetry run pytest --cov --cov-report=html
+python -m poetry run python -m pytest --cov --cov-report=html
 ```
 
 **127 tests, 100% line and branch coverage** (see
@@ -338,7 +343,7 @@ database path, a row factory and a mock repository.
 | **pre-commit** | runs the tools above plus file checks before every commit |
 
 ```bash
-poetry run pre-commit run --all-files
+python -m poetry run python -m pre_commit run --all-files
 ```
 
 All modules and public functions have Google-style docstrings.
