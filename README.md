@@ -80,13 +80,13 @@ python -m venv .venv
 .venv\Scripts\activate          # Windows  (Linux/macOS: source .venv/bin/activate)
 python -m pip install -r requirements.txt
 python -m pip install -e .
-python -m importer data/sample_users.csv
+python -m importer.cli data/sample_users.csv
 ```
 
 ## Usage
 
 ```bash
-python -m poetry run python -m importer <csv_file> [--db PATH] [--log-level LEVEL] [--log-file PATH] [-v]
+python -m poetry run python -m importer.cli <csv_file> [--db PATH] [--log-level LEVEL] [--log-file PATH] [-v]
 ```
 
 | Option | Default | Description |
@@ -112,13 +112,13 @@ The `importer` console script is also installed, so `poetry run importer data/sa
 
 ```bash
 # Successful import
-python -m poetry run python -m importer data/sample_users.csv
+python -m poetry run python -m importer.cli data/sample_users.csv
 
 # Rows with errors and duplicates
-python -m poetry run python -m importer data/invalid_users.csv
+python -m poetry run python -m importer.cli data/invalid_users.csv
 
 # Custom database, debug logs shown in the terminal
-python -m poetry run python -m importer data/sample_users.csv --db output/test.json --log-level DEBUG -v
+python -m poetry run python -m importer.cli data/sample_users.csv --db output/test.json --log-level DEBUG -v
 
 # Start again with an empty database
 rm output/users.json            # PowerShell: Remove-Item output\users.json
@@ -210,8 +210,7 @@ The database is a JSON list of users:
 .
 ├── src/importer/
 │   ├── __init__.py          # package docstring and version
-│   ├── __main__.py          # enables `python -m importer`
-│   ├── cli.py               # argument parsing, wiring, exit codes
+│   ├── cli.py               # entry point (main), arguments, exit codes
 │   ├── display.py           # boxed terminal report and error box
 │   ├── service.py           # ImportService: parse -> validate -> store
 │   ├── parser.py            # CsvParser + open_csv context manager
@@ -328,7 +327,7 @@ python -m poetry run python -m pytest --cov --cov-report=html
 | `test_display.py` | report layout, statuses, error box | parametrize |
 | `test_logging_config.py` | handlers, levels, file fallback | mocker, capsys |
 | `test_cli.py` | arguments, exit codes, output | capsys, monkeypatch, mocker |
-| `test_integration.py` | real files end to end, `python -m importer` | no mocks, subprocess |
+| `test_integration.py` | real files end to end, `python -m importer.cli` | no mocks, subprocess |
 
 Shared fixtures in `tests/conftest.py` provide temporary CSV files, a temporary
 database path, a row factory and a mock repository.

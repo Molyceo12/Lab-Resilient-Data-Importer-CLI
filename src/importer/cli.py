@@ -1,7 +1,7 @@
 """Command-line interface for the importer.
 
 Usage:
-    python -m importer data/sample_users.csv --db output/users.json
+    python -m importer.cli data/sample_users.csv --db output/users.json
 """
 
 from __future__ import annotations
@@ -98,3 +98,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     elapsed = time.perf_counter() - started
     print(render_report(summary, args.csv_file, args.db, args.log_file, elapsed))
     return EXIT_PARTIAL if summary.has_problems else EXIT_OK
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

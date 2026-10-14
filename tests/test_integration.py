@@ -89,7 +89,9 @@ def test_corrupt_database_is_not_overwritten(db_path: Path, log_path: Path) -> N
     assert db_path.read_text(encoding="utf-8") == "{oops"
 
 
-def test_python_dash_m_entry_point(
+# runpy warns that importer.cli is already imported by this test module; harmless.
+@pytest.mark.filterwarnings("ignore::RuntimeWarning")
+def test_cli_module_entry_point(
     db_path: Path, log_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(
@@ -106,7 +108,7 @@ def test_python_dash_m_entry_point(
     )
 
     with pytest.raises(SystemExit) as caught:
-        runpy.run_module("importer", run_name="__main__")
+        runpy.run_module("importer.cli", run_name="__main__")
 
     assert caught.value.code == EXIT_OK
 
@@ -119,7 +121,7 @@ def test_runs_as_separate_process(tmp_path: Path) -> None:
         [
             sys.executable,
             "-m",
-            "importer",
+            "importer.cli",
             str(SAMPLE_CSV),
             "--db",
             str(db_path),
