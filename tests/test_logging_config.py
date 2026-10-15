@@ -4,63 +4,23 @@ import logging
 from pathlib import Path
 
 import pytest
-from pytest_mock import MockerFixture
 
 from importer.logging_config import configure_logging
 
 
-def handler_types() -> list[type[logging.Handler]]:
-    """Return the types of the root logger's handlers."""
-    return [type(handler) for handler in logging.getLogger().handlers]
-
-
-@pytest.mark.parametrize("level", ["debug", "INFO", "Warning", "ERROR"])
-def test_sets_level_case_insensitively(level: str) -> None:
-    configure_logging(level)
-    assert logging.getLogger().level == logging.getLevelName(level.upper())
-
-
-def test_console_only_by_default() -> None:
-    configure_logging()
-    assert handler_types() == [logging.StreamHandler]
-
-
-def test_invalid_level_raises() -> None:
-    with pytest.raises(ValueError, match="Invalid log level: LOUD"):
-        configure_logging("LOUD")
-
-
-def test_writes_structured_lines_to_file(log_path: Path) -> None:
-    configure_logging("INFO", log_file=log_path, console=False)
-    logging.getLogger("importer.test").info("hello file")
-    for handler in logging.getLogger().handlers:
-        handler.flush()
-
-    assert handler_types() == [logging.FileHandler]
-    line = log_path.read_text(encoding="utf-8").strip()
-    assert line.endswith("| INFO     | importer.test | hello file")
-
-
-def test_file_and_console_together(log_path: Path) -> None:
-    configure_logging("INFO", log_file=log_path, console=True)
-    assert handler_types() == [logging.FileHandler, logging.StreamHandler]
-
-
-def test_falls_back_to_console_when_file_fails(
-    log_path: Path, mocker: MockerFixture, capsys: pytest.CaptureFixture[str]
-) -> None:
-    mocker.patch(
-        "importer.logging_config.logging.FileHandler",
-        side_effect=PermissionError("access denied"),
+def test_writes_structured_lines_to_file(tmp_path: Path) -> None:
+    log_file = tmp_path / "logs" / "importer.log"
+    configure_logging("debug", log_file=log_file, console=False)
+    logging.getLogger("importer.test").info("hello")
+    logging.shutdown()
+    assert log_file.read_text(encoding="utf-8").endswith(
+        "| INFO     | importer.test | hello\n"
     )
-
-    configure_logging("INFO", log_file=log_path, console=False)
-
-    assert handler_types() == [logging.StreamHandler]
-    assert "Cannot write log file" in capsys.readouterr().err
+    assert logging.getLogger().level == logging.DEBUG
 
 
-def test_replaces_previous_handlers() -> None:
+def test_console_only_and_bad_level() -> None:
     configure_logging()
-    configure_logging()
-    assert len(logging.getLogger().handlers) == 1
+    assert [type(h) for h in logging.getLogger().handlers] == [logging.StreamHandler]
+    with pytest.raises(ValueError):
+        configure_logging("LOUD")

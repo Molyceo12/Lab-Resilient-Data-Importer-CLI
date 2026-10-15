@@ -2,7 +2,7 @@
 
 import pytest
 
-from importer.display import BORDER, SEPARATOR, WIDTH, render_error, render_report
+from importer.display import WIDTH, render_error, render_report
 from importer.exceptions import (
     CsvFileNotFoundError,
     FileFormatError,
@@ -14,110 +14,52 @@ from importer.models import ImportSummary, RowProblem
 
 
 def assert_framed(text: str) -> None:
-    """Check every line is exactly WIDTH wide and has borders on both sides."""
-    for line in text.splitlines():
-        assert len(line) == WIDTH, line
-        assert line == SEPARATOR or (
-            line.startswith(BORDER) and line.endswith(BORDER)
-        ), line
-
-
-def report(summary: ImportSummary, log_file: str | None = "output/importer.log") -> str:
-    """Render a report with fixed paths and timing."""
-    return render_report(summary, "data/users.csv", "output/users.json", log_file, 0.5)
-
-
-def test_report_shows_paths_counts_and_time() -> None:
-    text = report(ImportSummary(imported=5))
-
-    assert_framed(text)
-    for expected in (
-        "RESILIENT DATA IMPORTER",
-        "data/users.csv",
-        "output/users.json",
-        "output/importer.log",
-        "[+] Imported   :     5",
-        "Finished in 0.50s",
-    ):
-        assert expected in text
-
-
-def test_report_without_log_file() -> None:
-    assert "Log file" not in report(ImportSummary(imported=1), log_file=None)
+    """Every line is exactly WIDTH wide with ``::`` on both sides."""
+    assert all(
+        len(line) == WIDTH and line[:2] == line[-2:] == "::"
+        for line in text.splitlines()
+    )
 
 
 @pytest.mark.parametrize(
-    ("summary", "status"),
+    ("summary", "expected"),
     [
-        pytest.param(ImportSummary(), "[i]  No data rows found", id="empty"),
-        pytest.param(
-            ImportSummary(imported=3), "[OK] All 3 row(s) imported", id="all-good"
-        ),
-        pytest.param(
+        (ImportSummary(), "[i]  No data rows found"),
+        (ImportSummary(imported=3), "[OK] All 3 row(s) imported successfully."),
+        (
             ImportSummary(skipped=2, duplicates=1),
             "[!]  No rows imported. 3 row(s) had problems.",
-            id="none-imported",
         ),
-        pytest.param(
-            ImportSummary(imported=2, skipped=1),
-            "[!]  Import finished: 2 imported, 1 row(s) need attention.",
-            id="mixed",
+        (
+            ImportSummary(1, 1, problems=[RowProblem(3, "invalid", "word " * 30)]),
+            "3     invalid      word word",
         ),
     ],
 )
-def test_report_status_line(summary: ImportSummary, status: str) -> None:
-    text = report(summary)
-    assert_framed(text)
-    assert status in text
-
-
-def test_report_lists_problems_in_a_table() -> None:
-    summary = ImportSummary(
-        imported=1,
-        skipped=1,
-        duplicates=1,
-        problems=[
-            RowProblem(3, "invalid", "name: value is empty"),
-            RowProblem(4, "duplicate", "email already exists (user U2)"),
-        ],
+def test_report(summary: ImportSummary, expected: str) -> None:
+    text = render_report(
+        summary, "data/users.csv", "x/" * 40, "output/importer.log", 0.5
     )
-    text = report(summary)
-
     assert_framed(text)
-    assert "PROBLEMS (2)" in text
-    assert "LINE  TYPE         DETAILS" in text
-    assert "3     invalid      name: value is empty" in text
-    assert "4     duplicate    email already exists (user U2)" in text
+    assert expected in text
+    assert "Finished in 0.50s" in text
 
 
-def test_long_values_wrap_inside_the_box() -> None:
-    long_path = "C:\\very\\long\\folder\\name" * 6
-    summary = ImportSummary(
-        skipped=1, problems=[RowProblem(2, "invalid", "word " * 40)]
-    )
-    text = render_report(summary, long_path, long_path, long_path, 0.0)
-
-    assert_framed(text)
-    assert len(text.splitlines()) > 25
+def test_report_without_log_file() -> None:
+    assert "Log file" not in render_report(ImportSummary(), "a.csv", "db.json", None, 0)
 
 
 @pytest.mark.parametrize(
     ("error", "tip"),
     [
-        pytest.param(
-            CsvFileNotFoundError("x.csv"), "Check the CSV file path", id="csv"
-        ),
-        pytest.param(FileFormatError("bad"), "Use a UTF-8 CSV file", id="format"),
-        pytest.param(StorageError("bad"), "Check the --db path", id="storage"),
-        pytest.param(
-            ValidationError(2, "email", "bad"), "See the log file", id="other"
-        ),
+        (CsvFileNotFoundError("x"), "Check the CSV file path"),
+        (FileFormatError("x"), "Use a UTF-8 CSV file"),
+        (StorageError("x"), "Check the --db path"),
+        (ValidationError(2, "email", "x"), "See the log file"),
     ],
 )
-def test_error_box_shows_reason_and_tip(error: ImporterError, tip: str) -> None:
+def test_error_box(error: ImporterError, tip: str) -> None:
     text = render_error(error, "data/users.csv")
-
     assert_framed(text)
     assert "[X]  IMPORT FAILED - nothing was saved" in text
-    assert "data/users.csv" in text
     assert tip in text

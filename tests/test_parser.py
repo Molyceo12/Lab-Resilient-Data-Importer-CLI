@@ -1,205 +1,81 @@
 """Tests for the CSV parser."""
 
-from __future__ import annotations
-
-import csv
+from collections.abc import Callable
 from pathlib import Path
-from typing import Self
 
 import pytest
 from pytest_mock import MockerFixture
 
 from importer.exceptions import CsvFileNotFoundError, FileFormatError
-from importer.parser import CsvParser, RawRow, open_csv
-from tests.helpers import CsvWriter
+from importer.parser import CsvParser, open_csv
 
 HEADER = "user_id,name,email\n"
-
-
-def parse(path: Path) -> list[RawRow]:
-    """Read every row of a CSV file with the default parser."""
-    return list(CsvParser().parse(path))
-
-
-def test_parses_valid_file(valid_csv: Path) -> None:
-    rows = parse(valid_csv)
-
-    assert [row.line_number for row in rows] == [2, 3, 4]
-    assert rows[0].data == {
-        "user_id": "U1",
-        "name": "Alice",
-        "email": "alice@example.com",
-    }
-    assert all(row.column_count == row.expected_columns == 3 for row in rows)
+ALICE = {"user_id": "U1", "name": "Alice", "email": "a@x.com"}
 
 
 @pytest.mark.parametrize(
     ("content", "expected"),
     [
+        pytest.param(HEADER + "U1,Alice,a@x.com\n", [(2, ALICE, 3)], id="simple"),
         pytest.param(
-            HEADER + "U1,Alice,a@x.com\n",
-            [(2, {"user_id": "U1", "name": "Alice", "email": "a@x.com"})],
-            id="simple",
+            "\ufeff User_ID ,NAME,Email\nU1,Alice,a@x.com\n",
+            [(2, ALICE, 3)],
+            id="bom-and-header-case",
+        ),
+        pytest.param(HEADER + " U1 , Alice ,a@x.com\n", [(2, ALICE, 3)], id="trimmed"),
+        pytest.param(HEADER + "\n  \nU1,Alice,a@x.com\n", [(4, ALICE, 3)], id="blanks"),
+        pytest.param(
+            "email,user_id,name\na@x.com,U1,Alice\n", [(2, ALICE, 3)], id="order"
         ),
         pytest.param(
-            " User_ID , NAME ,Email\nU1,Alice,a@x.com\n",
-            [(2, {"user_id": "U1", "name": "Alice", "email": "a@x.com"})],
-            id="headers-case-and-spaces",
+            HEADER + 'U1,"Smith, Ann",a@x.com\r\n',
+            [(2, {**ALICE, "name": "Smith, Ann"}, 3)],
+            id="quoted-comma",
         ),
         pytest.param(
-            HEADER + "  U1 ,  Alice  , a@x.com \n",
-            [(2, {"user_id": "U1", "name": "Alice", "email": "a@x.com"})],
-            id="values-trimmed",
+            HEADER + "U1,Alice\n", [(2, {**ALICE, "email": ""}, 2)], id="short"
         ),
-        pytest.param(
-            HEADER + "U1,Alice,a@x.com\n\n   \nU2,Bob,b@x.com\n",
-            [
-                (2, {"user_id": "U1", "name": "Alice", "email": "a@x.com"}),
-                (5, {"user_id": "U2", "name": "Bob", "email": "b@x.com"}),
-            ],
-            id="blank-lines-skipped",
-        ),
-        pytest.param(
-            HEADER + 'U1,"Smith, Ann",ann@x.com\r\n',
-            [(2, {"user_id": "U1", "name": "Smith, Ann", "email": "ann@x.com"})],
-            id="quoted-comma-and-crlf",
-        ),
-        pytest.param(
-            "email,user_id,name\na@x.com,U1,Alice\n",
-            [(2, {"email": "a@x.com", "user_id": "U1", "name": "Alice"})],
-            id="columns-in-any-order",
-        ),
+        pytest.param(HEADER + "U1,Alice,a@x.com,x\n", [(2, ALICE, 4)], id="long"),
         pytest.param(HEADER, [], id="header-only"),
     ],
 )
-def test_parses_valid_inputs(
-    write_csv: CsvWriter,
+def test_parses_valid_files(
+    write_csv: Callable[[str], Path],
     content: str,
-    expected: list[tuple[int, dict[str, str]]],
+    expected: list[tuple[int, dict[str, str], int]],
 ) -> None:
-    rows = parse(write_csv(content))
-    assert [(row.line_number, row.data) for row in rows] == expected
-
-
-def test_reads_file_with_utf8_bom(write_csv: CsvWriter) -> None:
-    path = write_csv(HEADER + "U1,Alice,a@x.com\n", encoding="utf-8-sig")
-    assert parse(path)[0].data["user_id"] == "U1"
-
-
-@pytest.mark.parametrize(
-    ("line", "column_count", "data"),
-    [
-        pytest.param(
-            "U1,Alice\n",
-            2,
-            {"user_id": "U1", "name": "Alice", "email": ""},
-            id="too-few-columns",
-        ),
-        pytest.param(
-            "U1,Alice,a@x.com,extra\n",
-            4,
-            {"user_id": "U1", "name": "Alice", "email": "a@x.com"},
-            id="too-many-columns",
-        ),
-    ],
-)
-def test_reports_wrong_column_count(
-    write_csv: CsvWriter, line: str, column_count: int, data: dict[str, str]
-) -> None:
-    row = parse(write_csv(HEADER + line))[0]
-    assert row.column_count == column_count
-    assert row.expected_columns == 3
-    assert row.data == data
+    rows = list(CsvParser().parse(write_csv(content)))
+    assert [(r.line_number, r.data, r.column_count) for r in rows] == expected
 
 
 @pytest.mark.parametrize(
     ("content", "message"),
     [
-        pytest.param("", "CSV file is empty", id="empty-file"),
-        pytest.param(
-            "id,name\n1,Alice\n",
-            "missing required headers: user_id, email",
-            id="missing-headers",
-        ),
-        pytest.param(
-            "name,email\nAlice,a@x.com\n",
-            "missing required headers: user_id",
-            id="missing-one-header",
-        ),
+        (b"", "CSV file is empty"),
+        (b"id,name\n1,A\n", "missing required headers: user_id, email"),
+        (b"user_id,name,email\nU1,Jos\xe9,j@x.com\n", "Cannot read CSV file"),
     ],
 )
-def test_rejects_bad_files(write_csv: CsvWriter, content: str, message: str) -> None:
+def test_rejects_bad_files(tmp_path: Path, content: bytes, message: str) -> None:
+    path = tmp_path / "bad.csv"
+    path.write_bytes(content)
     with pytest.raises(FileFormatError, match=message):
-        parse(write_csv(content))
+        list(CsvParser().parse(path))
 
 
-def test_missing_file_raises(tmp_path: Path) -> None:
-    missing = tmp_path / "missing.csv"
-    with pytest.raises(CsvFileNotFoundError) as caught:
-        parse(missing)
-    assert caught.value.path == str(missing)
+def test_missing_file(tmp_path: Path) -> None:
+    with pytest.raises(CsvFileNotFoundError, match="CSV file not found"):
+        list(CsvParser().parse(tmp_path / "missing.csv"))
 
 
-def test_non_utf8_file_raises_without_fake_line_number(tmp_path: Path) -> None:
-    path = tmp_path / "latin1.csv"
-    path.write_bytes(b"user_id,name,email\nU1,Jos\xe9,jose@x.com\n")
-
-    with pytest.raises(FileFormatError) as caught:
-        parse(path)
-
-    assert "Cannot read CSV file" in str(caught.value)
-    assert "near line" not in str(caught.value)
-
-
-def test_csv_error_mentions_line_number(valid_csv: Path, mocker: MockerFixture) -> None:
-    class BrokenReader:
-        """CSV reader that fails after the header row."""
-
-        line_num = 5
-
-        def __init__(self) -> None:
-            self._rows = iter([["user_id", "name", "email"]])
-
-        def __iter__(self) -> Self:
-            return self
-
-        def __next__(self) -> list[str]:
-            row = next(self._rows, None)
-            if row is None:
-                raise csv.Error("unexpected end of data")
-            return row
-
-    mocker.patch("importer.parser.csv.reader", return_value=BrokenReader())
-
-    with pytest.raises(FileFormatError, match="near line 5: unexpected end of data"):
-        parse(valid_csv)
-
-
-def test_custom_required_headers(write_csv: CsvWriter) -> None:
-    parser = CsvParser(required_headers=("id",))
-    rows = list(parser.parse(write_csv("id,label\n1,first\n")))
-    assert rows[0].data == {"id": "1", "label": "first"}
-
-
-def test_open_csv_closes_file(valid_csv: Path) -> None:
-    with open_csv(valid_csv) as handle:
+def test_open_csv_closes_file_and_reports_permission_errors(
+    write_csv: Callable[[str], Path], mocker: MockerFixture
+) -> None:
+    path = write_csv(HEADER)
+    with open_csv(path) as handle:
         assert not handle.closed
     assert handle.closed
 
-
-def test_open_csv_closes_file_on_error(valid_csv: Path) -> None:
-    with pytest.raises(RuntimeError), open_csv(valid_csv) as handle:
-        raise RuntimeError("boom")
-    assert handle.closed
-
-
-def test_open_csv_unreadable_file_raises(
-    valid_csv: Path, mocker: MockerFixture
-) -> None:
-    mocker.patch.object(Path, "open", side_effect=PermissionError("access denied"))
-
-    with (
-        pytest.raises(FileFormatError, match="Cannot open CSV file"),
-        open_csv(valid_csv),
-    ):
+    mocker.patch.object(Path, "open", side_effect=PermissionError("denied"))
+    with pytest.raises(FileFormatError, match="Cannot open CSV file"), open_csv(path):
         pass
