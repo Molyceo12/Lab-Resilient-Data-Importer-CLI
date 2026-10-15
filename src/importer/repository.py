@@ -74,7 +74,7 @@ def atomic_write(path: Path) -> Iterator[TextIO]:
     )
     tmp_path = Path(tmp_name)
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        with open(fd, "w", encoding="utf-8") as handle:
             yield handle
         os.replace(tmp_path, path)
     finally:
