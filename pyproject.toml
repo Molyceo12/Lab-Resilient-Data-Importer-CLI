@@ -1,6 +1,6 @@
 [project]
 name = "resilient-data-importer"
-version = "0.1.0"
+version = "1.0.0"
 description = "CLI tool that imports user data from CSV into a JSON database with robust error handling."
 authors = [
     {name = "Irimaso Maurice",email = "irimasomaurice@gmail.com"}
