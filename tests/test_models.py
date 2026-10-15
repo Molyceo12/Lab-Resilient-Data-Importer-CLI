@@ -32,13 +32,13 @@ def test_user_is_frozen(sample_user: User) -> None:
 def test_summary_starts_empty() -> None:
     summary = ImportSummary()
     assert (summary.imported, summary.skipped, summary.duplicates) == (0, 0, 0)
-    assert summary.problems == []
+    assert not summary.problems
 
 
 def test_summaries_do_not_share_problem_lists() -> None:
     first, second = ImportSummary(), ImportSummary()
     first.problems.append(RowProblem(2, "invalid", "name: value is empty"))
-    assert second.problems == []
+    assert not second.problems
 
 
 @pytest.mark.parametrize(

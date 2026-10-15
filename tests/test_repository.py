@@ -21,11 +21,12 @@ def write_json(path: Path, data: object) -> None:
 
 def test_interface_cannot_be_instantiated() -> None:
     with pytest.raises(TypeError):
+        # pylint: disable-next=abstract-class-instantiated
         UserRepository()  # type: ignore[abstract]
 
 
 def test_missing_file_starts_empty(db_path: Path) -> None:
-    assert JsonUserRepository(db_path).get_all() == []
+    assert not JsonUserRepository(db_path).get_all()
     assert not db_path.exists()
 
 
@@ -142,7 +143,7 @@ def test_write_failure_keeps_old_file(
         repository.save()
 
     assert db_path.read_bytes() == before
-    assert list(db_path.parent.glob("*.tmp")) == []
+    assert not list(db_path.parent.glob("*.tmp"))
 
 
 def test_atomic_write_replaces_file(tmp_path: Path) -> None:
@@ -151,7 +152,7 @@ def test_atomic_write_replaces_file(tmp_path: Path) -> None:
         handle.write("hello")
 
     assert target.read_text(encoding="utf-8") == "hello"
-    assert list(target.parent.glob("*.tmp")) == []
+    assert not list(target.parent.glob("*.tmp"))
 
 
 def test_atomic_write_error_leaves_target_untouched(tmp_path: Path) -> None:
@@ -163,4 +164,4 @@ def test_atomic_write_error_leaves_target_untouched(tmp_path: Path) -> None:
         raise RuntimeError("crash")
 
     assert target.read_text(encoding="utf-8") == "original"
-    assert list(tmp_path.glob("*.tmp")) == []
+    assert not list(tmp_path.glob("*.tmp"))

@@ -57,6 +57,17 @@ show_missing = true
 fail_under = 90
 exclude_also = ["@(abc\\.)?abstractmethod"]
 
+[tool.pylint.main]
+py-version = "3.11"
+
+[tool.pylint.basic]
+# Test names describe what they check, so test functions need no docstring.
+no-docstring-rgx = "^(_|test_)"
+
+[tool.pylint.design]
+# Small classes with one job (parse, validate, run) are intended.
+min-public-methods = 1
+
 [tool.mypy]
 python_version = "3.11"
 strict = true

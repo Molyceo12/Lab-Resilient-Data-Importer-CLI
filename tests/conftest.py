@@ -40,8 +40,8 @@ def restore_logging() -> Iterator[None]:
     root.setLevel(saved_level)
 
 
-@pytest.fixture
-def write_csv(tmp_path: Path) -> CsvWriter:
+@pytest.fixture(name="write_csv")
+def fixture_write_csv(tmp_path: Path) -> CsvWriter:
     """Return a function that writes CSV text to a temporary file."""
 
     def _write(content: str, name: str = "users.csv", encoding: str = "utf-8") -> Path:
@@ -52,26 +52,26 @@ def write_csv(tmp_path: Path) -> CsvWriter:
     return _write
 
 
-@pytest.fixture
-def valid_csv(write_csv: CsvWriter) -> Path:
+@pytest.fixture(name="valid_csv")
+def fixture_valid_csv(write_csv: CsvWriter) -> Path:
     """Return a temporary CSV file with three valid users."""
     return write_csv(VALID_CSV)
 
 
-@pytest.fixture
-def db_path(tmp_path: Path) -> Path:
+@pytest.fixture(name="db_path")
+def fixture_db_path(tmp_path: Path) -> Path:
     """Return a path for a JSON database that does not exist yet."""
     return tmp_path / "db" / "users.json"
 
 
-@pytest.fixture
-def log_path(tmp_path: Path) -> Path:
+@pytest.fixture(name="log_path")
+def fixture_log_path(tmp_path: Path) -> Path:
     """Return a path for a temporary log file."""
     return tmp_path / "logs" / "importer.log"
 
 
-@pytest.fixture
-def make_row() -> RowFactory:
+@pytest.fixture(name="make_row")
+def fixture_make_row() -> RowFactory:
     """Return a function that builds a ``RawRow`` for validator tests."""
 
     def _make(
@@ -92,14 +92,14 @@ def make_row() -> RowFactory:
     return _make
 
 
-@pytest.fixture
-def sample_user() -> User:
+@pytest.fixture(name="sample_user")
+def fixture_sample_user() -> User:
     """Return one valid user."""
     return User(user_id="U1", name="Alice", email="alice@example.com")
 
 
-@pytest.fixture
-def mock_repository(mocker: MockerFixture) -> MagicMock:
+@pytest.fixture(name="mock_repository")
+def fixture_mock_repository(mocker: MockerFixture) -> MagicMock:
     """Return a mock that behaves like a ``UserRepository``."""
     repository: MagicMock = mocker.create_autospec(UserRepository, instance=True)
     return repository

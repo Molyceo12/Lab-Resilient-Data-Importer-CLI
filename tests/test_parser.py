@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
+from typing import Self
 
 import pytest
 from pytest_mock import MockerFixture
@@ -152,12 +153,14 @@ def test_non_utf8_file_raises_without_fake_line_number(tmp_path: Path) -> None:
 
 def test_csv_error_mentions_line_number(valid_csv: Path, mocker: MockerFixture) -> None:
     class BrokenReader:
+        """CSV reader that fails after the header row."""
+
         line_num = 5
 
         def __init__(self) -> None:
             self._rows = iter([["user_id", "name", "email"]])
 
-        def __iter__(self) -> BrokenReader:
+        def __iter__(self) -> Self:
             return self
 
         def __next__(self) -> list[str]:

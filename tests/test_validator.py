@@ -9,8 +9,8 @@ from importer.validator import MAX_NAME_LENGTH, UserValidator
 from tests.helpers import RowFactory
 
 
-@pytest.fixture
-def validator() -> UserValidator:
+@pytest.fixture(name="validator")
+def fixture_validator() -> UserValidator:
     """Return a validator instance."""
     return UserValidator()
 

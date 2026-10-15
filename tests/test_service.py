@@ -22,22 +22,22 @@ from importer.validator import UserValidator
 from tests.helpers import RowFactory
 
 
-@pytest.fixture
-def mock_parser(mocker: MockerFixture) -> MagicMock:
+@pytest.fixture(name="mock_parser")
+def fixture_mock_parser(mocker: MockerFixture) -> MagicMock:
     """Return a mock that behaves like a ``CsvParser``."""
     parser: MagicMock = mocker.create_autospec(CsvParser, instance=True)
     return parser
 
 
-@pytest.fixture
-def mock_validator(mocker: MockerFixture) -> MagicMock:
+@pytest.fixture(name="mock_validator")
+def fixture_mock_validator(mocker: MockerFixture) -> MagicMock:
     """Return a mock that behaves like a ``UserValidator``."""
     validator: MagicMock = mocker.create_autospec(UserValidator, instance=True)
     return validator
 
 
-@pytest.fixture
-def service(
+@pytest.fixture(name="service")
+def fixture_service(
     mock_parser: MagicMock, mock_validator: MagicMock, mock_repository: MagicMock
 ) -> ImportService:
     """Return a service wired to mocks."""
