@@ -9,4 +9,4 @@ The package is split into small parts with one job each:
 - ``cli`` and ``display``: the command-line interface and its output
 """
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
