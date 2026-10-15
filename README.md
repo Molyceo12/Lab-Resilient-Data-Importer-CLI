@@ -297,8 +297,7 @@ configures handlers once, from the CLI.
 | `DEBUG` | file open/close and other details |
 
 Logs go to `output/importer.log` by default; `--verbose` also prints them to the
-terminal (stderr). If the log file cannot be opened, logging falls back to the
-terminal.
+terminal (stderr).
 
 ## Testing and coverage
 
@@ -313,7 +312,7 @@ python -m poetry run python -m pytest --cov --cov-report=term-missing
 python -m poetry run python -m pytest --cov --cov-report=html
 ```
 
-**127 tests, 100% line and branch coverage** (see
+**69 tests, 100% line and branch coverage** (see
 [`reports/coverage.txt`](reports/coverage.txt)).
 
 | Test file | Covers | Techniques |
@@ -325,12 +324,12 @@ python -m poetry run python -m pytest --cov --cov-report=html
 | `test_repository.py` | storage, duplicates, corrupt DB, atomic writes | `tmp_path`, mocker |
 | `test_service.py` | orchestration with all parts mocked | pytest-mock (`create_autospec`) |
 | `test_display.py` | report layout, statuses, error box | parametrize |
-| `test_logging_config.py` | handlers, levels, file fallback | mocker, capsys |
-| `test_cli.py` | arguments, exit codes, output | capsys, monkeypatch, mocker |
-| `test_integration.py` | real files end to end, `python -m importer.cli` | no mocks, subprocess |
+| `test_logging_config.py` | file and console handlers, levels | `tmp_path` |
+| `test_cli.py` | exit codes, output, `--verbose`, `--help` | parametrize, capsys |
+| `test_integration.py` | real files end to end, `python -m importer.cli` | no mocks, runpy |
 
 Shared fixtures in `tests/conftest.py` provide temporary CSV files, a temporary
-database path, a row factory and a mock repository.
+database path and a mock repository; `tests/helpers.py` builds sample rows.
 
 ## Code quality
 
