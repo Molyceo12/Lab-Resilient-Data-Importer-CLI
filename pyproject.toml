@@ -1,7 +1,7 @@
 [project]
-name = "importer"
+name = "resilient-data-importer"
 version = "0.1.0"
-description = ""
+description = "CLI tool that imports user data from CSV into a JSON database with robust error handling."
 authors = [
     {name = "Irimaso Maurice",email = "irimasomaurice@gmail.com"}
 ]
@@ -42,6 +42,31 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"
+
+[tool.coverage.run]
+source = ["importer"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+fail_under = 90
+exclude_also = ["@(abc\\.)?abstractmethod"]
+
+[tool.pylint.main]
+py-version = "3.11"
+
+[tool.pylint.basic]
+# Test names describe what they check, so test functions need no docstring.
+no-docstring-rgx = "^(_|test_)"
+
+[tool.pylint.design]
+# Small classes with one job (parse, validate, run) are intended.
+min-public-methods = 1
 
 [tool.mypy]
 python_version = "3.11"

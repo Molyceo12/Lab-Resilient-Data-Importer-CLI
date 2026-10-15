@@ -74,13 +74,14 @@ def atomic_write(path: Path) -> Iterator[TextIO]:
     )
     tmp_path = Path(tmp_name)
     try:
-        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+        # Pylint in VS Code wrongly infers None here; open() is a context manager.
+        # pylint: disable-next=not-context-manager
+        with open(fd, "w", encoding="utf-8") as handle:
             yield handle
-    except BaseException:
-        tmp_path.unlink(missing_ok=True)
-        raise
-    else:
         os.replace(tmp_path, path)
+    finally:
+        # After a successful replace the temp file is gone; otherwise remove it.
+        tmp_path.unlink(missing_ok=True)
 
 
 class JsonUserRepository(UserRepository):
