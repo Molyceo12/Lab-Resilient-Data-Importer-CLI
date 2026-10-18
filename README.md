@@ -6,7 +6,7 @@ malformed rows, invalid data and duplicate users never crash the tool or corrupt
 the database. Bad rows are skipped and reported, good rows are saved.
 
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
-![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen)
 ![Code style: black](https://img.shields.io/badge/code%20style-black-000000)
 
 ---
@@ -16,15 +16,17 @@ the database. Bad rows are skipped and reported, good rows are saved.
 1. [Features](#features)
 2. [Requirements](#requirements)
 3. [Setup](#setup)
-4. [Usage](#usage)
-5. [CSV format and sample data](#csv-format-and-sample-data)
-6. [Project structure](#project-structure)
-7. [Design](#design)
-8. [Error handling](#error-handling)
-9. [Logging](#logging)
-10. [Testing and coverage](#testing-and-coverage)
-11. [Code quality](#code-quality)
-12. [Git workflow](#git-workflow)
+4. [Quick commands](#quick-commands)
+5. [Usage](#usage)
+6. [Scenarios](#scenarios)
+7. [CSV format and sample data](#csv-format-and-sample-data)
+8. [Project structure](#project-structure)
+9. [Design](#design)
+10. [Error handling](#error-handling)
+11. [Logging](#logging)
+12. [Testing and coverage](#testing-and-coverage)
+13. [Code quality](#code-quality)
+14. [Git workflow](#git-workflow)
 
 ---
 
@@ -40,7 +42,7 @@ the database. Bad rows are skipped and reported, good rows are saved.
 - Clear, boxed terminal report and meaningful **exit codes** for scripting
 - Structured logging to `output/importer.log` (or the terminal with `--verbose`)
 - Custom exception hierarchy, context managers, type hints (mypy strict),
-  Google-style docstrings, 100% test coverage
+  Google-style docstrings, 96% test coverage
 
 ## Requirements
 
@@ -83,17 +85,104 @@ python -m pip install -e .
 python -m importer.cli data/sample_users.csv
 ```
 
+## Quick commands
+
+Every command in one place (PowerShell). Run them from the project folder; see [Scenarios](#scenarios) for what each import prints.
+
+**Go to the project folder**
+
+```bash
+cd Lab-Resilient-Data-Importer-CLI
+```
+
+**Import a valid file**
+
+```bash
+python -m poetry run python -m importer.cli data/sample_users.csv
+```
+
+**Import a file with bad rows**
+
+```bash
+python -m poetry run python -m importer.cli data/invalid_users.csv
+```
+
+**Import a missing file**
+
+```bash
+python -m poetry run python -m importer.cli missing.csv
+```
+
+**Import and show logs in the terminal**
+
+```bash
+python -m poetry run python -m importer.cli data/sample_users.csv -v
+```
+
+**Use another database file**
+
+```bash
+python -m poetry run python -m importer.cli data/sample_users.csv --db output/test.json
+```
+
+**Show the CLI help**
+
+```bash
+python -m poetry run python -m importer.cli --help
+```
+
+**Show the last log lines**
+
+```bash
+Get-Content output\importer.log -Tail 10
+```
+
+**Start again with an empty database**
+
+```bash
+Remove-Item output\users.json
+```
+
+**Run all tests**
+
+```bash
+python -m poetry run python -m pytest
+```
+
+**Run all tests and list their names**
+
+```bash
+python -m poetry run python -m pytest -v
+```
+
+**Run one test file**
+
+```bash
+python -m poetry run python -m pytest tests/test_parser.py -v
+```
+
+**Run tests with coverage**
+
+```bash
+python -m poetry run python -m pytest --cov --cov-report=term-missing
+```
+
+**Run the code checks (Black, ruff, mypy)**
+
+```bash
+python -m poetry run python -m pre_commit run --all-files
+```
+
 ## Usage
 
 ```bash
-python -m poetry run python -m importer.cli <csv_file> [--db PATH] [--log-level LEVEL] [--log-file PATH] [-v]
+python -m poetry run python -m importer.cli <csv_file> [--db PATH] [--log-file PATH] [-v]
 ```
 
 | Option | Default | Description |
 |---|---|---|
 | `csv_file` | (required) | CSV file to import |
 | `--db` | `output/users.json` | JSON database file (created if missing) |
-| `--log-level` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL` |
 | `--log-file` | `output/importer.log` | File that receives the detailed log |
 | `-v`, `--verbose` | off | Also print log lines in the terminal |
 | `-h`, `--help` | | Show help |
@@ -108,67 +197,192 @@ The `importer` console script is also installed, so `poetry run importer data/sa
 | `1` | Fatal error: missing file, bad headers, unreadable file or broken database. Nothing was saved |
 | `2` | Import finished, but some rows were skipped or duplicated (also used by argparse for invalid arguments) |
 
-### Examples
+## Scenarios
+
+Run these from the project folder, in order. The commands are for PowerShell.
+
+### 1. Successful import
+
+Start with an empty database, then import a valid file. Exit code `0`.
 
 ```bash
-# Successful import
+Remove-Item output\users.json -ErrorAction SilentlyContinue
+```
+```bash
 python -m poetry run python -m importer.cli data/sample_users.csv
-
-# Rows with errors and duplicates
-python -m poetry run python -m importer.cli data/invalid_users.csv
-
-# Custom database, debug logs shown in the terminal
-python -m poetry run python -m importer.cli data/sample_users.csv --db output/test.json --log-level DEBUG -v
-
-# Start again with an empty database
-rm output/users.json            # PowerShell: Remove-Item output\users.json
 ```
-
-### Sample output
 
 ```
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-::                      RESILIENT DATA IMPORTER                       ::
+::  RESILIENT DATA IMPORTER                                           ::
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-::  Source file    : data/invalid_users.csv                           ::
-::  Database       : output/users.json                                ::
-::  Log file       : output/importer.log                              ::
+::  File       : data/sample_users.csv                                ::
+::  Database   : output/users.json                                    ::
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-::  IMPORT RESULTS                                                    ::
-::                                                                    ::
-::  [+] Imported   :     2                                            ::
-::  [-] Skipped    :     3                                            ::
-::  [=] Duplicate  :     2                                            ::
-::  ----------------------                                            ::
-::      Total      :     7                                            ::
+::  Imported   : 5                                                    ::
+::  Skipped    : 0                                                    ::
+::  Duplicates : 0                                                    ::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::  [OK] All rows imported successfully                               ::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+```
+
+### 2. Same file again (duplicates)
+
+Every user already exists, so nothing new is saved. Exit code `2`.
+
+```bash
+python -m poetry run python -m importer.cli data/sample_users.csv
+```
+
+```
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::  RESILIENT DATA IMPORTER                                           ::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::  File       : data/sample_users.csv                                ::
+::  Database   : output/users.json                                    ::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::  Imported   : 0                                                    ::
+::  Skipped    : 0                                                    ::
+::  Duplicates : 5                                                    ::
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ::  PROBLEMS (5)                                                      ::
-::                                                                    ::
-::  LINE  TYPE         DETAILS                                        ::
-::  ----  ---------    ---------------------------------------------- ::
-::  3     invalid      name: value is empty                           ::
-::  4     invalid      email: 'irene-at-example.com' is not valid     ::
-::  5     invalid      row: expected 3 columns, got 2                 ::
-::  6     duplicate    user_id already exists (user U101)             ::
-::  7     duplicate    email already exists (user U105)               ::
+::  Line 2: duplicate - user_id already exists (user U001)            ::
+::  Line 3: duplicate - user_id already exists (user U002)            ::
+::  Line 4: duplicate - user_id already exists (user U003)            ::
+::  Line 5: duplicate - user_id already exists (user U004)            ::
+::  Line 6: duplicate - user_id already exists (user U005)            ::
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-::  [!]  Import finished: 2 imported, 5 row(s) need attention.        ::
-::  Finished in 0.00s                                                 ::
+::  [!] Finished, but some rows were not imported                     ::
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ```
 
-A fatal error shows what went wrong and how to fix it:
+### 3. Rows with errors
+
+Good rows are saved; bad and duplicate rows are skipped and listed. Exit code `2`.
+
+```bash
+python -m poetry run python -m importer.cli data/invalid_users.csv
+```
 
 ```
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-::                      RESILIENT DATA IMPORTER                       ::
+::  RESILIENT DATA IMPORTER                                           ::
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-::  [X]  IMPORT FAILED - nothing was saved                            ::
+::  File       : data/invalid_users.csv                               ::
+::  Database   : output/users.json                                    ::
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-::  Source file    : missing.csv                                      ::
-::  Reason         : CSV file not found: missing.csv                  ::
-::  Tip            : Check the CSV file path and try again.           ::
+::  Imported   : 2                                                    ::
+::  Skipped    : 3                                                    ::
+::  Duplicates : 2                                                    ::
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::  PROBLEMS (5)                                                      ::
+::  Line 3: invalid - name: value is empty                            ::
+::  Line 4: invalid - email: 'irene-at-example.com' is not valid      ::
+::  Line 5: invalid - row: expected 3 columns, got 2                  ::
+::  Line 6: duplicate - user_id already exists (user U101)            ::
+::  Line 7: duplicate - email already exists (user U105)              ::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::  [!] Finished, but some rows were not imported                     ::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+```
+
+### 4. Missing CSV file
+
+The import stops and nothing is saved. Exit code `1`.
+
+```bash
+python -m poetry run python -m importer.cli missing.csv
+```
+
+```
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::  [X] IMPORT FAILED - nothing was saved                             ::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::  File   : missing.csv                                              ::
+::  Reason : CSV file not found: missing.csv                          ::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+```
+
+### 5. Wrong headers
+
+Create a file without the required headers, then import it. Exit code `1`.
+
+```bash
+Set-Content output\bad_headers.csv "id,name`n1,Ana"
+```
+```bash
+python -m poetry run python -m importer.cli output/bad_headers.csv
+```
+
+```
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::  [X] IMPORT FAILED - nothing was saved                             ::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::  File   : output/bad_headers.csv                                   ::
+::  Reason : CSV file is missing required headers: user_id            ::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+```
+
+### 6. Empty file
+
+Create an empty file, then import it. Exit code `1`.
+
+```bash
+New-Item output\empty.csv -ItemType File -Force
+```
+```bash
+python -m poetry run python -m importer.cli output/empty.csv
+```
+
+```
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::  [X] IMPORT FAILED - nothing was saved                             ::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::  File   : output/empty.csv                                         ::
+::  Reason : CSV file is empty: output\empty.csv                      ::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+```
+
+### 7. Broken database
+
+Corrupt the database, then import. The import stops and the broken file is not overwritten. Exit code `1`.
+
+```bash
+Set-Content output\users.json "{oops"
+```
+```bash
+python -m poetry run python -m importer.cli data/sample_users.csv
+```
+
+```
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::  [X] IMPORT FAILED - nothing was saved                             ::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+::  File   : data/sample_users.csv                                    ::
+::  Reason : Database output\users.json is not valid JSON: Expecting  ::
+::      property name enclosed in double quotes: line 1 column 2      ::
+::      (char 1)                                                      ::
+::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+```
+
+### 8. See the logs
+
+Every run writes detailed log lines to `output/importer.log`. Show the last ones, or add `-v` to also see them in the terminal:
+
+```bash
+Get-Content output\importer.log -Tail 10
+```
+```bash
+python -m poetry run python -m importer.cli data/sample_users.csv -v
+```
+
+### Clean up
+
+Delete the database so the next run starts fresh:
+
+```bash
+Remove-Item output\users.json
 ```
 
 ## CSV format and sample data
@@ -211,7 +425,7 @@ The database is a JSON list of users:
 ├── src/importer/
 │   ├── __init__.py          # package docstring and version
 │   ├── cli.py               # entry point (main), arguments, exit codes
-│   ├── display.py           # boxed terminal report and error box
+│   ├── display.py           # result and error boxes printed in the terminal
 │   ├── service.py           # ImportService: parse -> validate -> store
 │   ├── parser.py            # CsvParser + open_csv context manager
 │   ├── validator.py         # UserValidator: turns raw rows into Users
@@ -243,7 +457,7 @@ mocked in tests.
                ├── UserValidator.validate() RawRow -> User, or ValidationError
                └── UserRepository.add()     stores User, or DuplicateUserError
                    UserRepository.save()    writes once at the end
-            <── ImportSummary ──> display.render_report()
+            <── ImportSummary ──> display.format_report()
 ```
 
 - **Repository pattern:** `UserRepository` is an abstract interface;
@@ -297,8 +511,7 @@ configures handlers once, from the CLI.
 | `DEBUG` | file open/close and other details |
 
 Logs go to `output/importer.log` by default; `--verbose` also prints them to the
-terminal (stderr). If the log file cannot be opened, logging falls back to the
-terminal.
+terminal (stderr).
 
 ## Testing and coverage
 
@@ -313,24 +526,19 @@ python -m poetry run python -m pytest --cov --cov-report=term-missing
 python -m poetry run python -m pytest --cov --cov-report=html
 ```
 
-**127 tests, 100% line and branch coverage** (see
+**18 tests, 96% line and branch coverage** (see
 [`reports/coverage.txt`](reports/coverage.txt)).
 
 | Test file | Covers | Techniques |
 |---|---|---|
-| `test_exceptions.py` | hierarchy and messages | parametrize |
-| `test_models.py` | User, ImportSummary | parametrize |
-| `test_parser.py` | valid/invalid CSV inputs, encodings, context manager | parametrize, `tmp_path`, mocker |
-| `test_validator.py` | valid and invalid rows | parametrize |
-| `test_repository.py` | storage, duplicates, corrupt DB, atomic writes | `tmp_path`, mocker |
-| `test_service.py` | orchestration with all parts mocked | pytest-mock (`create_autospec`) |
-| `test_display.py` | report layout, statuses, error box | parametrize |
-| `test_logging_config.py` | handlers, levels, file fallback | mocker, capsys |
-| `test_cli.py` | arguments, exit codes, output | capsys, monkeypatch, mocker |
-| `test_integration.py` | real files end to end, `python -m importer.cli` | no mocks, subprocess |
+| `test_parser.py` | valid and invalid CSV files, missing file, file system error | parametrize, `tmp_path`, mocker |
+| `test_validator.py` | valid row, invalid rows | parametrize |
+| `test_repository.py` | save and load, duplicate user, failed write | `tmp_path`, mocker |
+| `test_service.py` | valid row saved, missing CSV saves nothing (all parts mocked) | pytest-mock (`create_autospec`) |
+| `test_integration.py` | real files end to end through the CLI | no mocks |
 
 Shared fixtures in `tests/conftest.py` provide temporary CSV files, a temporary
-database path, a row factory and a mock repository.
+database path and a mock repository; `tests/helpers.py` builds sample rows.
 
 ## Code quality
 
@@ -351,7 +559,7 @@ All modules and public functions have Google-style docstrings.
 
 The project follows **Git Flow**:
 
-- `main`: released, stable code (tagged `v1.0.0`)
+- `main`: released, stable code (tagged `v1.0.0`, `v2.0.0`)
 - `develop`: integration branch; features are merged here through pull requests
 - `feature/*`: one branch per piece of work, created from `develop`
 - `release/*`: final checks before merging `develop` into `main`
@@ -363,6 +571,7 @@ The project follows **Git Flow**:
 | #3 | `feature/cli` | import service, CLI, exit codes, sample data |
 | #4 | `feature/cli-output` | boxed report, file logging |
 | #5 | `feature/tests-and-docs` | test suite, coverage report, README |
+| #8 | `feature/simplify-code` | simpler parser, CLI, display and tests; README scenarios |
 
 Commit messages follow
 [Conventional Commits](https://www.conventionalcommits.org/)
