@@ -6,7 +6,6 @@ import logging
 from pathlib import Path
 
 LOG_FORMAT = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
-VALID_LEVELS = ("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL")
 
 
 def configure_logging(

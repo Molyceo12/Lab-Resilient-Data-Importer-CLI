@@ -22,11 +22,6 @@ class ImportSummary:
     problems: list[RowProblem] = field(default_factory=list)
 
     @property
-    def total_rows(self) -> int:
-        """Return the number of data rows processed."""
-        return self.imported + self.skipped + self.duplicates
-
-    @property
     def has_problems(self) -> bool:
         """Return ``True`` if any row was skipped or duplicated."""
         return self.skipped + self.duplicates > 0
