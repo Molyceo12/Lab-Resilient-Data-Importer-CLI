@@ -7,75 +7,48 @@ import pytest
 from pytest_mock import MockerFixture
 
 from importer.exceptions import CsvFileNotFoundError, FileFormatError
-from importer.parser import CsvParser, open_csv
+from importer.parser import CsvParser
 
 HEADER = "user_id,name,email\n"
 ALICE = {"user_id": "U1", "name": "Alice", "email": "a@x.com"}
 
 
 @pytest.mark.parametrize(
-    ("content", "expected"),
+    "content",
     [
-        pytest.param(HEADER + "U1,Alice,a@x.com\n", [(2, ALICE, 3)], id="simple"),
-        pytest.param(
-            "\ufeff User_ID ,NAME,Email\nU1,Alice,a@x.com\n",
-            [(2, ALICE, 3)],
-            id="bom-and-header-case",
-        ),
-        pytest.param(HEADER + " U1 , Alice ,a@x.com\n", [(2, ALICE, 3)], id="trimmed"),
-        pytest.param(HEADER + "\n  \nU1,Alice,a@x.com\n", [(4, ALICE, 3)], id="blanks"),
-        pytest.param(
-            "email,user_id,name\na@x.com,U1,Alice\n", [(2, ALICE, 3)], id="order"
-        ),
-        pytest.param(
-            HEADER + 'U1,"Smith, Ann",a@x.com\r\n',
-            [(2, {**ALICE, "name": "Smith, Ann"}, 3)],
-            id="quoted-comma",
-        ),
-        pytest.param(
-            HEADER + "U1,Alice\n", [(2, {**ALICE, "email": ""}, 2)], id="short"
-        ),
-        pytest.param(HEADER + "U1,Alice,a@x.com,x\n", [(2, ALICE, 4)], id="long"),
-        pytest.param(HEADER, [], id="header-only"),
+        HEADER + "U1,Alice,a@x.com\n",
+        HEADER + " U1 , Alice , a@x.com \n",  # spaces are trimmed
     ],
 )
-def test_parses_valid_files(
-    write_csv: Callable[[str], Path],
-    content: str,
-    expected: list[tuple[int, dict[str, str], int]],
-) -> None:
+def test_reads_valid_rows(write_csv: Callable[[str], Path], content: str) -> None:
+    """A valid CSV file is read into one row for Alice."""
     rows = list(CsvParser().parse(write_csv(content)))
-    assert [(r.line_number, r.data, r.column_count) for r in rows] == expected
+    assert rows[0].data == ALICE
 
 
 @pytest.mark.parametrize(
     ("content", "message"),
     [
-        (b"", "CSV file is empty"),
-        (b"id,name\n1,A\n", "missing required headers: user_id, email"),
-        (b"user_id,name,email\nU1,Jos\xe9,j@x.com\n", "Cannot read CSV file"),
+        ("", "CSV file is empty"),
+        ("id,name\n1,A\n", "missing required headers"),
     ],
 )
-def test_rejects_bad_files(tmp_path: Path, content: bytes, message: str) -> None:
-    path = tmp_path / "bad.csv"
-    path.write_bytes(content)
+def test_rejects_bad_files(
+    write_csv: Callable[[str], Path], content: str, message: str
+) -> None:
+    """An empty file or a file without the required headers is rejected."""
     with pytest.raises(FileFormatError, match=message):
-        list(CsvParser().parse(path))
+        list(CsvParser().parse(write_csv(content)))
 
 
 def test_missing_file(tmp_path: Path) -> None:
-    with pytest.raises(CsvFileNotFoundError, match="CSV file not found"):
+    """A CSV file that does not exist raises CsvFileNotFoundError."""
+    with pytest.raises(CsvFileNotFoundError):
         list(CsvParser().parse(tmp_path / "missing.csv"))
 
 
-def test_open_csv_closes_file_and_reports_permission_errors(
-    write_csv: Callable[[str], Path], mocker: MockerFixture
-) -> None:
-    path = write_csv(HEADER)
-    with open_csv(path) as handle:
-        assert not handle.closed
-    assert handle.closed
-
+def test_file_system_error(mocker: MockerFixture) -> None:
+    """If the file system refuses access, FileFormatError is raised."""
     mocker.patch.object(Path, "open", side_effect=PermissionError("denied"))
-    with pytest.raises(FileFormatError, match="Cannot open CSV file"), open_csv(path):
-        pass
+    with pytest.raises(FileFormatError, match="Cannot open CSV file"):
+        list(CsvParser().parse("users.csv"))

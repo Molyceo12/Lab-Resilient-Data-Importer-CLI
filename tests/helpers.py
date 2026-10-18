@@ -2,8 +2,6 @@
 
 from importer.parser import RawRow
 
-VALID_CSV = "user_id,name,email\nU1,Alice,alice@example.com\nU2,Bob,bob@example.com\n"
-
 
 def make_row(
     user_id: str = "U1",

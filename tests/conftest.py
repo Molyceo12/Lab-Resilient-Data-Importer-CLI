@@ -16,16 +16,17 @@ from importer.repository import UserRepository
 @pytest.fixture(autouse=True)
 def restore_logging() -> Iterator[None]:
     """Undo any logging setup a test makes, so tests stay independent."""
-    root = logging.getLogger()
-    saved_handlers, saved_level = root.handlers[:], root.level
+    logger = logging.getLogger()
+    old_places = logger.handlers[:]
+    old_level = logger.level
     yield
-    for handler in root.handlers[:]:
-        root.removeHandler(handler)
-        if handler not in saved_handlers:
-            handler.close()
-    for handler in saved_handlers:
-        root.addHandler(handler)
-    root.setLevel(saved_level)
+    for place in logger.handlers[:]:
+        logger.removeHandler(place)
+        if place not in old_places:
+            place.close()
+    for place in old_places:
+        logger.addHandler(place)
+    logger.setLevel(old_level)
 
 
 @pytest.fixture(name="write_csv")

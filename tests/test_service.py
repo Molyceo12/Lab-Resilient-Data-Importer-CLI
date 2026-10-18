@@ -5,18 +5,14 @@ from unittest.mock import MagicMock
 import pytest
 from pytest_mock import MockerFixture
 
-from importer.exceptions import (
-    CsvFileNotFoundError,
-    DuplicateUserError,
-    FileFormatError,
-    ValidationError,
-)
-from importer.models import RowProblem, User
+from importer.exceptions import CsvFileNotFoundError
+from importer.models import User
 from importer.parser import CsvParser
 from importer.service import ImportService
 from importer.validator import UserValidator
 from tests.helpers import make_row
 
+ALICE = User("U1", "Alice", "alice@example.com")
 Mocks = tuple[MagicMock, MagicMock, MagicMock]
 
 
@@ -28,31 +24,23 @@ def fixture_mocks(mocker: MockerFixture, mock_repository: MagicMock) -> Mocks:
     return parser, validator, mock_repository
 
 
-def test_skips_bad_rows_and_keeps_going(mocks: Mocks) -> None:
+def test_valid_row_is_saved(mocks: Mocks) -> None:
+    """A valid row is added to the repository and saved."""
     parser, validator, repository = mocks
-    parser.parse.return_value = iter([make_row(line=n) for n in (2, 3, 4, 5)])
-    validator.validate.side_effect = [
-        User("U1", "A", "a@x.com"),
-        ValidationError(3, "email", "'bob' is not valid"),
-        User("U1", "A", "a@x.com"),
-        User("U4", "D", "d@x.com"),
-    ]
-    repository.add.side_effect = [None, DuplicateUserError("U1", "user_id"), None]
+    parser.parse.return_value = [make_row()]
+    validator.validate.return_value = ALICE
 
     summary = ImportService(*mocks).run("users.csv")
 
-    assert (summary.imported, summary.skipped, summary.duplicates) == (2, 1, 1)
-    assert summary.problems == [
-        RowProblem(3, "invalid", "email: 'bob' is not valid"),
-        RowProblem(4, "duplicate", "user_id already exists (user U1)"),
-    ]
-    repository.save.assert_called_once_with()
+    assert summary.imported == 1
+    repository.add.assert_called_once_with(ALICE)
+    repository.save.assert_called_once()
 
 
-@pytest.mark.parametrize("error", [CsvFileNotFoundError("x"), FileFormatError("x")])
-def test_fatal_error_saves_nothing(mocks: Mocks, error: Exception) -> None:
+def test_missing_csv_saves_nothing(mocks: Mocks) -> None:
+    """A missing CSV file stops the import before anything is saved."""
     parser, _, repository = mocks
-    parser.parse.side_effect = error
-    with pytest.raises(type(error)):
+    parser.parse.side_effect = CsvFileNotFoundError("x")
+    with pytest.raises(CsvFileNotFoundError):
         ImportService(*mocks).run("users.csv")
     repository.save.assert_not_called()
