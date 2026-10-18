@@ -559,7 +559,7 @@ All modules and public functions have Google-style docstrings.
 
 The project follows **Git Flow**:
 
-- `main`: released, stable code (tagged `v1.0.0`)
+- `main`: released, stable code (tagged `v1.0.0`, `v2.0.0`)
 - `develop`: integration branch; features are merged here through pull requests
 - `feature/*`: one branch per piece of work, created from `develop`
 - `release/*`: final checks before merging `develop` into `main`
@@ -571,6 +571,7 @@ The project follows **Git Flow**:
 | #3 | `feature/cli` | import service, CLI, exit codes, sample data |
 | #4 | `feature/cli-output` | boxed report, file logging |
 | #5 | `feature/tests-and-docs` | test suite, coverage report, README |
+| #8 | `feature/simplify-code` | simpler parser, CLI, display and tests; README scenarios |
 
 Commit messages follow
 [Conventional Commits](https://www.conventionalcommits.org/)
