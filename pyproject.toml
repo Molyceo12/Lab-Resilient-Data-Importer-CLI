@@ -61,8 +61,8 @@ exclude_also = ["@(abc\\.)?abstractmethod"]
 py-version = "3.11"
 
 [tool.pylint.basic]
-# Test names describe what they check, so test functions need no docstring.
-no-docstring-rgx = "^(_|test_)"
+# Private helpers need no docstring; tests have one that says what they check.
+no-docstring-rgx = "^_"
 
 [tool.pylint.design]
 # Small classes with one job (parse, validate, run) are intended.
