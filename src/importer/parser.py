@@ -1,6 +1,4 @@
-"""CSV reading: the parser only reads rows; the validator judges them."""
-
-from __future__ import annotations
+"""CSV reading: the parser only reads rows; the validator checks them."""
 
 import csv
 import logging
@@ -13,12 +11,12 @@ from typing import TextIO
 from importer.exceptions import CsvFileNotFoundError, FileFormatError
 
 logger = logging.getLogger(__name__)
-REQUIRED_HEADERS = ("user_id", "name", "email")
+REQUIRED_HEADERS = ["user_id", "name", "email"]
 
 
 @dataclass(frozen=True)
 class RawRow:
-    """One unvalidated row: line number, values by header and column counts."""
+    """One row from the CSV file, not checked yet."""
 
     line_number: int
     data: dict[str, str]
@@ -35,53 +33,57 @@ def open_csv(path: Path) -> Iterator[TextIO]:
         FileFormatError: If the file exists but cannot be opened.
     """
     try:
-        handle = path.open(newline="", encoding="utf-8-sig")
-    except FileNotFoundError as exc:
-        raise CsvFileNotFoundError(f"CSV file not found: {path}") from exc
-    except OSError as exc:
-        raise FileFormatError(f"Cannot open CSV file {path}: {exc}") from exc
-    with handle:
-        yield handle
+        file = path.open(encoding="utf-8-sig", newline="")
+    except FileNotFoundError as error:
+        raise CsvFileNotFoundError(f"CSV file not found: {path}") from error
+    except OSError as error:
+        raise FileFormatError(f"Cannot open CSV file {path}: {error}") from error
+    with file:
+        yield file
 
 
 class CsvParser:
     """Reads user rows from a CSV file."""
 
     def parse(self, path: str | Path) -> Iterator[RawRow]:
-        """Yield every non-blank data row of a CSV file as a ``RawRow``.
+        """Yield every non-empty data row of the CSV file.
 
         Raises:
             CsvFileNotFoundError: If the file does not exist.
             FileFormatError: If the file is empty, unreadable or misses headers.
         """
-        csv_path, count = Path(path), 0
+        csv_path = Path(path)
         logger.info("Reading CSV file %s", csv_path)
-        with open_csv(csv_path) as handle:
-            reader = csv.reader(handle)
+
+        with open_csv(csv_path) as file:
             try:
-                first = next(reader, None)
-                if first is None:
-                    raise FileFormatError(f"CSV file is empty: {csv_path}")
-                headers = [name.strip().lower() for name in first]
-                missing = [name for name in REQUIRED_HEADERS if name not in headers]
-                if missing:
-                    raise FileFormatError(
-                        f"CSV file {csv_path} is missing required headers: "
-                        + ", ".join(missing)
-                    )
-                for values in reader:
-                    if any(value.strip() for value in values):
-                        count += 1
-                        padded = [*values, *[""] * len(headers)]
-                        data = {h: padded[i].strip() for i, h in enumerate(headers)}
-                        yield RawRow(reader.line_num, data, len(values), len(headers))
-            except (csv.Error, UnicodeDecodeError) as exc:
-                # Decoding happens in buffered chunks, so the line may be unknown (0).
-                where = f" near line {reader.line_num}" if reader.line_num else ""
-                raise FileFormatError(
-                    f"Cannot read CSV file {csv_path}{where}: {exc}"
-                ) from exc
+                lines = list(csv.reader(file))
+            except (csv.Error, UnicodeDecodeError) as error:
+                raise FileFormatError(f"Cannot read CSV file {csv_path}") from error
             else:
-                logger.info("Read %d data rows from %s", count, csv_path)
+                logger.info("Read %d lines from %s", len(lines), csv_path)
             finally:
-                logger.debug("Closed CSV file %s", csv_path)
+                logger.debug("Finished reading %s", csv_path)
+
+        if not lines:
+            raise FileFormatError(f"CSV file is empty: {csv_path}")
+
+        headers = [name.strip().lower() for name in lines[0]]
+        for name in REQUIRED_HEADERS:
+            if name not in headers:
+                raise FileFormatError(f"CSV file is missing required headers: {name}")
+
+        line_number = 1
+        for values in lines[1:]:
+            line_number += 1
+            if not any(value.strip() for value in values):
+                continue  # skip blank lines
+
+            data = {}
+            for i, header in enumerate(headers):
+                if i < len(values):
+                    data[header] = values[i].strip()
+                else:
+                    data[header] = ""
+
+            yield RawRow(line_number, data, len(values), len(headers))
