@@ -12,6 +12,8 @@ from importer.service import ImportService
 from importer.validator import UserValidator
 
 logger = logging.getLogger(__name__)
+DEFAULT_DB = "output/users.json"
+DEFAULT_LOG_FILE = "output/importer.log"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -21,8 +23,8 @@ def main(argv: list[str] | None = None) -> int:
     """
     parser = argparse.ArgumentParser(description="Import users from a CSV file.")
     parser.add_argument("csv_file", help="CSV file to import")
-    parser.add_argument("--db", default="output/users.json", help="JSON database")
-    parser.add_argument("--log-file", default="output/importer.log", help="log file")
+    parser.add_argument("--db", default=DEFAULT_DB, help="JSON database")
+    parser.add_argument("--log-file", default=DEFAULT_LOG_FILE, help="log file")
     parser.add_argument("-v", "--verbose", action="store_true", help="show logs")
     args = parser.parse_args(argv)
 

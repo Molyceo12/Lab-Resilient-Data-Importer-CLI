@@ -56,34 +56,34 @@ class CsvParser:
         logger.info("Reading CSV file %s", csv_path)
 
         with open_csv(csv_path) as file:
+            reader = csv.reader(file)  # reads one line at a time
             try:
-                lines = list(csv.reader(file))
+                first_line = next(reader, None)
+                if first_line is None:
+                    raise FileFormatError(f"CSV file is empty: {csv_path}")
+
+                headers = [name.strip().lower() for name in first_line]
+                for name in REQUIRED_HEADERS:
+                    if name not in headers:
+                        raise FileFormatError(
+                            f"CSV file is missing required headers: {name}"
+                        )
+
+                for values in reader:
+                    if not any(value.strip() for value in values):
+                        continue  # skip blank lines
+
+                    data = {}
+                    for i, header in enumerate(headers):
+                        if i < len(values):
+                            data[header] = values[i].strip()
+                        else:
+                            data[header] = ""
+
+                    yield RawRow(reader.line_num, data, len(values), len(headers))
             except (csv.Error, UnicodeDecodeError) as error:
                 raise FileFormatError(f"Cannot read CSV file {csv_path}") from error
             else:
-                logger.info("Read %d lines from %s", len(lines), csv_path)
+                logger.info("Finished reading %s", csv_path)
             finally:
-                logger.debug("Finished reading %s", csv_path)
-
-        if not lines:
-            raise FileFormatError(f"CSV file is empty: {csv_path}")
-
-        headers = [name.strip().lower() for name in lines[0]]
-        for name in REQUIRED_HEADERS:
-            if name not in headers:
-                raise FileFormatError(f"CSV file is missing required headers: {name}")
-
-        line_number = 1
-        for values in lines[1:]:
-            line_number += 1
-            if not any(value.strip() for value in values):
-                continue  # skip blank lines
-
-            data = {}
-            for i, header in enumerate(headers):
-                if i < len(values):
-                    data[header] = values[i].strip()
-                else:
-                    data[header] = ""
-
-            yield RawRow(line_number, data, len(values), len(headers))
+                logger.debug("Closed CSV file %s", csv_path)

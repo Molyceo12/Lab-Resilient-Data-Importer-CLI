@@ -6,7 +6,7 @@ malformed rows, invalid data and duplicate users never crash the tool or corrupt
 the database. Bad rows are skipped and reported, good rows are saved.
 
 ![Python](https://img.shields.io/badge/python-3.11%2B-blue)
-![Coverage](https://img.shields.io/badge/coverage-95%25-brightgreen)
+![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen)
 ![Code style: black](https://img.shields.io/badge/code%20style-black-000000)
 
 ---
@@ -42,7 +42,7 @@ the database. Bad rows are skipped and reported, good rows are saved.
 - Clear, boxed terminal report and meaningful **exit codes** for scripting
 - Structured logging to `output/importer.log` (or the terminal with `--verbose`)
 - Custom exception hierarchy, context managers, type hints (mypy strict),
-  Google-style docstrings, 95% test coverage
+  Google-style docstrings, 96% test coverage
 
 ## Requirements
 
@@ -526,7 +526,7 @@ python -m poetry run python -m pytest --cov --cov-report=term-missing
 python -m poetry run python -m pytest --cov --cov-report=html
 ```
 
-**18 tests, 95% line and branch coverage** (see
+**18 tests, 96% line and branch coverage** (see
 [`reports/coverage.txt`](reports/coverage.txt)).
 
 | Test file | Covers | Techniques |

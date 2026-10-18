@@ -1,5 +1,5 @@
 Resilient Data Importer CLI - Test Coverage Report
-Generated: 2026-10-18 23:17 | Python 3.14.8
+Generated: 2026-10-18 23:48 | Python 3.14.8
 Command: python -m pytest --cov --cov-report=term-missing
 
 _______________ coverage: platform win32, python 3.14.8-final-0 _______________
@@ -7,18 +7,18 @@ _______________ coverage: platform win32, python 3.14.8-final-0 _______________
 Name                              Stmts   Miss Branch BrPart  Cover   Missing
 -----------------------------------------------------------------------------
 src\importer\__init__.py              1      0      0      0   100%
-src\importer\cli.py                  31      1      4      1    94%   46
+src\importer\cli.py                  33      1      4      1    95%   48
 src\importer\display.py              41      0      8      0   100%
 src\importer\exceptions.py           12      0      0      0   100%
 src\importer\logging_config.py       12      1      4      2    81%   20->23, 24
 src\importer\models\__init__.py       3      0      0      0   100%
 src\importer\models\summary.py       12      0      0      0   100%
 src\importer\models\user.py          12      0      0      0   100%
-src\importer\parser.py               50      3     14      1    94%   61-62, 80
+src\importer\parser.py               49      2     14      1    95%   74, 85
 src\importer\repository.py           62      4      8      0    94%   105-108
 src\importer\service.py              38      0      2      0   100%
 src\importer\validator.py            21      2     10      1    90%   33-34
 -----------------------------------------------------------------------------
-TOTAL                               295     11     50      5    95%
-Required test coverage of 90.0% reached. Total coverage: 95.36%
-18 passed in 0.56s
+TOTAL                               296     10     50      5    96%
+Required test coverage of 90.0% reached. Total coverage: 95.66%
+18 passed in 0.31s
