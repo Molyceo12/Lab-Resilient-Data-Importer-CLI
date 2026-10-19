@@ -426,8 +426,10 @@ The database is a JSON list of users:
 │   │   ├── user.py              # User dataclass
 │   │   └── summary.py           # ImportSummary and RowProblem dataclasses
 │   ├── parsers/
-│   │   └── csv_parser.py        # CsvParser, RawRow + open_csv context manager
+│   │   ├── base.py              # RowParser interface + RawRow dataclass
+│   │   └── csv_parser.py        # CsvParser + open_csv context manager
 │   ├── validators/
+│   │   ├── base.py              # RowValidator interface
 │   │   └── user_validator.py    # UserValidator: turns raw rows into Users
 │   ├── repositories/
 │   │   ├── base.py              # UserRepository interface
@@ -461,16 +463,21 @@ mocked in tests.
 ```
  cli.py ──> ImportService.run(csv)
                │
-               ├── CsvParser.parse()        reads raw rows (RawRow)
-               ├── UserValidator.validate() RawRow -> User, or ValidationError
+               ├── RowParser.parse()        reads raw rows (RawRow)
+               ├── RowValidator.validate()  RawRow -> User, or ValidationError
                └── UserRepository.add()     stores User, or DuplicateUserError
                    UserRepository.save()    writes once at the end
             <── ImportSummary ──> display.format_report()
 ```
 
-- **Repository pattern:** `UserRepository` is an abstract interface;
-  `JsonUserRepository` is the JSON implementation. The service depends only on
-  the interface (Dependency Inversion).
+- **Interfaces for every part:** `RowParser`, `RowValidator` and
+  `UserRepository` are abstract interfaces; `CsvParser`, `UserValidator` and
+  `JsonUserRepository` implement them. The service depends only on the
+  interfaces (Dependency Inversion), so a new parser, validator or storage can
+  be added without changing it (Open/Closed). Only `cli.py` picks the concrete
+  classes.
+- **Repository pattern:** `UserRepository` hides how users are stored;
+  `JsonUserRepository` is the JSON implementation.
 - **Dataclasses:** `User` (frozen), `RawRow`, `ImportSummary`, `RowProblem`.
 - **Context managers:** `open_csv()` always closes the CSV file;
   `atomic_write()` writes to a temporary file and replaces the database only when

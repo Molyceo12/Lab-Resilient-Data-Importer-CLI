@@ -5,12 +5,13 @@ import re
 from importer.exceptions import ValidationError
 from importer.models import User
 from importer.parsers import RawRow
+from importer.validators.base import RowValidator
 
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 MAX_NAME_LENGTH = 100
 
 
-class UserValidator:
+class UserValidator(RowValidator):
     """Checks a raw CSV row and builds a ``User`` from it."""
 
     def validate(self, row: RawRow) -> User:
