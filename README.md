@@ -575,7 +575,7 @@ All modules and public functions have Google-style docstrings.
 
 The project follows **Git Flow**:
 
-- `main`: released, stable code (tagged `v1.0.0`, `v2.0.0`)
+- `main`: released, stable code (tagged `v1.0.0`, `v2.0.0`, `v3.0.0`)
 - `develop`: integration branch; features are merged here through pull requests
 - `feature/*`: one branch per piece of work, created from `develop`
 - `release/*`: final checks before merging `develop` into `main`

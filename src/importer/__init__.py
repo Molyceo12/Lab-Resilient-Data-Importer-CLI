@@ -11,4 +11,4 @@ The package is split into folders, each with one job:
 - ``cli``: the command-line entry point
 """
 
-__version__ = "2.0.0"
+__version__ = "3.0.0"
