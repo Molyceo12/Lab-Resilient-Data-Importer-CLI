@@ -4,6 +4,24 @@ All notable changes to this project are listed here.
 The format follows [Keep a Changelog](https://keepachangelog.com/) and the
 project uses [Semantic Versioning](https://semver.org/).
 
+## [3.0.0] - 2026-10-19
+
+Code split into packages, with an interface for every part.
+
+### Changed
+- Modules grouped into `parsers/`, `validators/`, `repositories/`,
+  `services/`, `models/` and `utils/` packages; import paths changed
+- `ImportService` depends only on the `RowParser`, `RowValidator` and
+  `UserRepository` interfaces (Dependency Inversion, Open/Closed)
+- `RawRow` moved to `parsers/base.py`, so the validator no longer depends on
+  the CSV parser module
+- Tests split into `tests/unit/` and `tests/integration/`
+- Demo CSVs (`bad_headers.csv`, `empty.csv`) moved from `output/` to `data/`
+
+### Added
+- `RowParser` interface (`parsers/base.py`) and `RowValidator` interface
+  (`validators/base.py`)
+
 ## [2.0.0] - 2026-10-18
 
 Simpler, beginner-friendly code and tests.
