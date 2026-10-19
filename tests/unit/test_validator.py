@@ -4,8 +4,8 @@ import pytest
 
 from importer.exceptions import ValidationError
 from importer.models import User
-from importer.parser import RawRow
-from importer.validator import UserValidator
+from importer.parsers import RawRow
+from importer.validators import UserValidator
 from tests.helpers import make_row
 
 

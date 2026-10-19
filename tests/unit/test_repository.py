@@ -7,7 +7,7 @@ from pytest_mock import MockerFixture
 
 from importer.exceptions import DuplicateUserError, StorageError
 from importer.models import User
-from importer.repository import JsonUserRepository
+from importer.repositories import JsonUserRepository
 
 ALICE = User("U1", "Alice", "alice@example.com")
 
@@ -30,7 +30,9 @@ def test_rejects_duplicate_user(db_path: Path) -> None:
 
 def test_failed_save(db_path: Path, mocker: MockerFixture) -> None:
     """If writing the file fails, StorageError is raised."""
-    mocker.patch("importer.repository.os.replace", side_effect=OSError("disk full"))
+    mocker.patch(
+        "importer.utils.file_utils.os.replace", side_effect=OSError("disk full")
+    )
     repository = JsonUserRepository(db_path)
     repository.add(ALICE)
     with pytest.raises(StorageError, match="Cannot write database"):

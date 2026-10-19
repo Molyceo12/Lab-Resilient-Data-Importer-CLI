@@ -1,24 +1,31 @@
 Resilient Data Importer CLI - Test Coverage Report
-Generated: 2026-10-18 23:48 | Python 3.14.8
+Generated: 2026-10-19 09:54 | Python 3.14.8
 Command: python -m pytest --cov --cov-report=term-missing
 
 _______________ coverage: platform win32, python 3.14.8-final-0 _______________
 
-Name                              Stmts   Miss Branch BrPart  Cover   Missing
------------------------------------------------------------------------------
-src\importer\__init__.py              1      0      0      0   100%
-src\importer\cli.py                  33      1      4      1    95%   48
-src\importer\display.py              41      0      8      0   100%
-src\importer\exceptions.py           12      0      0      0   100%
-src\importer\logging_config.py       12      1      4      2    81%   20->23, 24
-src\importer\models\__init__.py       3      0      0      0   100%
-src\importer\models\summary.py       12      0      0      0   100%
-src\importer\models\user.py          12      0      0      0   100%
-src\importer\parser.py               49      2     14      1    95%   74, 85
-src\importer\repository.py           62      4      8      0    94%   105-108
-src\importer\service.py              38      0      2      0   100%
-src\importer\validator.py            21      2     10      1    90%   33-34
------------------------------------------------------------------------------
-TOTAL                               296     10     50      5    96%
-Required test coverage of 90.0% reached. Total coverage: 95.66%
-18 passed in 0.31s
+Name                                           Stmts   Miss Branch BrPart  Cover   Missing
+------------------------------------------------------------------------------------------
+src\importer\__init__.py                           1      0      0      0   100%
+src\importer\cli.py                               32      1      4      1    94%   47
+src\importer\exceptions.py                        12      0      0      0   100%
+src\importer\models\__init__.py                    3      0      0      0   100%
+src\importer\models\summary.py                    12      0      0      0   100%
+src\importer\models\user.py                       12      0      0      0   100%
+src\importer\parsers\__init__.py                   2      0      0      0   100%
+src\importer\parsers\csv_parser.py                49      2     14      1    95%   74, 85
+src\importer\repositories\__init__.py              3      0      0      0   100%
+src\importer\repositories\base.py                  3      0      0      0   100%
+src\importer\repositories\json_repository.py      48      4      8      0    93%   74-77
+src\importer\services\__init__.py                  2      0      0      0   100%
+src\importer\services\import_service.py           38      0      2      0   100%
+src\importer\utils\__init__.py                     4      0      0      0   100%
+src\importer\utils\display.py                     41      0      8      0   100%
+src\importer\utils\file_utils.py                  15      0      0      0   100%
+src\importer\utils\logging_config.py              12      1      4      2    81%   20->23, 24
+src\importer\validators\__init__.py                2      0      0      0   100%
+src\importer\validators\user_validator.py         21      2     10      1    90%   33-34
+------------------------------------------------------------------------------------------
+TOTAL                                            312     10     50      5    96%
+Required test coverage of 90.0% reached. Total coverage: 95.86%
+============================= 18 passed in 0.46s ==============================

@@ -4,24 +4,14 @@ import csv
 import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
-from dataclasses import dataclass
 from pathlib import Path
 from typing import TextIO
 
 from importer.exceptions import CsvFileNotFoundError, FileFormatError
+from importer.parsers.base import RawRow, RowParser
 
 logger = logging.getLogger(__name__)
 REQUIRED_HEADERS = ["user_id", "name", "email"]
-
-
-@dataclass(frozen=True)
-class RawRow:
-    """One row from the CSV file, not checked yet."""
-
-    line_number: int
-    data: dict[str, str]
-    column_count: int
-    expected_columns: int
 
 
 @contextmanager
@@ -42,7 +32,7 @@ def open_csv(path: Path) -> Iterator[TextIO]:
         yield file
 
 
-class CsvParser:
+class CsvParser(RowParser):
     """Reads user rows from a CSV file."""
 
     def parse(self, path: str | Path) -> Iterator[RawRow]:
