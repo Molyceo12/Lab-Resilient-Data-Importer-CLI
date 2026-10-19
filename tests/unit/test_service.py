@@ -7,9 +7,9 @@ from pytest_mock import MockerFixture
 
 from importer.exceptions import CsvFileNotFoundError
 from importer.models import User
-from importer.parser import CsvParser
-from importer.service import ImportService
-from importer.validator import UserValidator
+from importer.parsers import CsvParser
+from importer.services import ImportService
+from importer.validators import UserValidator
 from tests.helpers import make_row
 
 ALICE = User("U1", "Alice", "alice@example.com")

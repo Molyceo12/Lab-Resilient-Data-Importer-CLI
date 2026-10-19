@@ -8,9 +8,9 @@ from pathlib import Path
 
 from importer.exceptions import DuplicateUserError, ValidationError
 from importer.models import ImportSummary, RowProblem
-from importer.parser import CsvParser
-from importer.repository import UserRepository
-from importer.validator import UserValidator
+from importer.parsers import CsvParser
+from importer.repositories import UserRepository
+from importer.validators import UserValidator
 
 logger = logging.getLogger(__name__)
 

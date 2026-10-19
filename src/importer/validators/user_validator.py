@@ -4,7 +4,7 @@ import re
 
 from importer.exceptions import ValidationError
 from importer.models import User
-from importer.parser import RawRow
+from importer.parsers import RawRow
 
 EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 MAX_NAME_LENGTH = 100

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from importer.cli import main
 
-DATA = Path(__file__).resolve().parents[1] / "data"
+DATA = Path(__file__).resolve().parents[2] / "data"
 
 
 def run(csv_file: Path, db_path: Path) -> int:
