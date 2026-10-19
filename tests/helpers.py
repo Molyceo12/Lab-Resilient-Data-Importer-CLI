@@ -1,6 +1,6 @@
 """Small builders shared by the tests."""
 
-from importer.parser import RawRow
+from importer.parsers import RawRow
 
 
 def make_row(

@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 import pytest
 from pytest_mock import MockerFixture
 
-from importer.repository import UserRepository
+from importer.repositories import UserRepository
 
 
 @pytest.fixture(autouse=True)

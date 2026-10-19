@@ -8,9 +8,9 @@ from pathlib import Path
 
 from importer.exceptions import DuplicateUserError, ValidationError
 from importer.models import ImportSummary, RowProblem
-from importer.parser import CsvParser
-from importer.repository import UserRepository
-from importer.validator import UserValidator
+from importer.parsers import RowParser
+from importer.repositories import UserRepository
+from importer.validators import RowValidator
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 class ImportService:
     """Coordinates the parser, validator and repository (passed in, so mockable)."""
 
-    parser: CsvParser
-    validator: UserValidator
+    parser: RowParser
+    validator: RowValidator
     repository: UserRepository
 
     def run(self, csv_path: str | Path) -> ImportSummary:

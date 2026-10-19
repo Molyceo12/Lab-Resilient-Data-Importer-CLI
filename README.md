@@ -158,7 +158,7 @@ python -m poetry run python -m pytest -v
 **Run one test file**
 
 ```bash
-python -m poetry run python -m pytest tests/test_parser.py -v
+python -m poetry run python -m pytest tests/unit/test_parser.py -v
 ```
 
 **Run tests with coverage**
@@ -306,41 +306,35 @@ python -m poetry run python -m importer.cli missing.csv
 
 ### 5. Wrong headers
 
-Create a file without the required headers, then import it. Exit code `1`.
+Import a file without the required headers. Exit code `1`.
 
 ```bash
-Set-Content output\bad_headers.csv "id,name`n1,Ana"
-```
-```bash
-python -m poetry run python -m importer.cli output/bad_headers.csv
+python -m poetry run python -m importer.cli data/bad_headers.csv
 ```
 
 ```
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ::  [X] IMPORT FAILED - nothing was saved                             ::
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-::  File   : output/bad_headers.csv                                   ::
+::  File   : data/bad_headers.csv                                     ::
 ::  Reason : CSV file is missing required headers: user_id            ::
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ```
 
 ### 6. Empty file
 
-Create an empty file, then import it. Exit code `1`.
+Import an empty file. Exit code `1`.
 
 ```bash
-New-Item output\empty.csv -ItemType File -Force
-```
-```bash
-python -m poetry run python -m importer.cli output/empty.csv
+python -m poetry run python -m importer.cli data/empty.csv
 ```
 
 ```
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ::  [X] IMPORT FAILED - nothing was saved                             ::
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-::  File   : output/empty.csv                                         ::
-::  Reason : CSV file is empty: output\empty.csv                      ::
+::  File   : data/empty.csv                                           ::
+::  Reason : CSV file is empty: data\empty.csv                        ::
 ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 ```
 
@@ -409,6 +403,8 @@ Validation rules for each row:
 |---|---|
 | `data/sample_users.csv` | 5 valid users (success demo) |
 | `data/invalid_users.csv` | one row for each error type (error demo) |
+| `data/bad_headers.csv` | missing the required headers (fatal error demo) |
+| `data/empty.csv` | empty file (fatal error demo) |
 
 The database is a JSON list of users:
 
@@ -423,25 +419,39 @@ The database is a JSON list of users:
 ```
 .
 ├── src/importer/
-│   ├── __init__.py          # package docstring and version
-│   ├── cli.py               # entry point (main), arguments, exit codes
-│   ├── display.py           # result and error boxes printed in the terminal
-│   ├── service.py           # ImportService: parse -> validate -> store
-│   ├── parser.py            # CsvParser + open_csv context manager
-│   ├── validator.py         # UserValidator: turns raw rows into Users
-│   ├── repository.py        # UserRepository interface + JsonUserRepository
-│   ├── exceptions.py        # custom exception hierarchy
-│   ├── logging_config.py    # logging setup (file and/or console)
-│   └── models/
-│       ├── user.py          # User dataclass
-│       └── summary.py       # ImportSummary and RowProblem dataclasses
-├── tests/                   # unit and integration tests (pytest)
-├── data/                    # sample CSV files
-├── reports/coverage.txt     # test coverage report
-├── .pre-commit-config.yaml  # Black, ruff, mypy and file checks
-├── pyproject.toml           # Poetry project + tool configuration
+│   ├── __init__.py              # package docstring and version
+│   ├── cli.py                   # entry point (main), arguments, exit codes
+│   ├── exceptions.py            # custom exception hierarchy
+│   ├── models/
+│   │   ├── user.py              # User dataclass
+│   │   └── summary.py           # ImportSummary and RowProblem dataclasses
+│   ├── parsers/
+│   │   ├── base.py              # RowParser interface + RawRow dataclass
+│   │   └── csv_parser.py        # CsvParser + open_csv context manager
+│   ├── validators/
+│   │   ├── base.py              # RowValidator interface
+│   │   └── user_validator.py    # UserValidator: turns raw rows into Users
+│   ├── repositories/
+│   │   ├── base.py              # UserRepository interface
+│   │   └── json_repository.py   # JsonUserRepository (JSON file storage)
+│   ├── services/
+│   │   └── import_service.py    # ImportService: parse -> validate -> store
+│   └── utils/
+│       ├── display.py           # result and error boxes printed in the terminal
+│       ├── file_utils.py        # atomic_write context manager
+│       └── logging_config.py    # logging setup (file and/or console)
+├── tests/
+│   ├── conftest.py              # shared fixtures
+│   ├── helpers.py               # builds sample rows
+│   ├── unit/                    # one test file per part, dependencies mocked
+│   └── integration/             # real files end to end through the CLI
+├── data/                        # input CSV files (sample and error demos)
+├── output/                      # generated: users.json database and importer.log
+├── reports/coverage.txt         # test coverage report
+├── .pre-commit-config.yaml      # Black, ruff, mypy and file checks
+├── pyproject.toml               # Poetry project + tool configuration
 ├── poetry.lock
-└── requirements.txt         # exported from Poetry
+└── requirements.txt             # exported from Poetry
 ```
 
 ## Design
@@ -453,16 +463,21 @@ mocked in tests.
 ```
  cli.py ──> ImportService.run(csv)
                │
-               ├── CsvParser.parse()        reads raw rows (RawRow)
-               ├── UserValidator.validate() RawRow -> User, or ValidationError
+               ├── RowParser.parse()        reads raw rows (RawRow)
+               ├── RowValidator.validate()  RawRow -> User, or ValidationError
                └── UserRepository.add()     stores User, or DuplicateUserError
                    UserRepository.save()    writes once at the end
             <── ImportSummary ──> display.format_report()
 ```
 
-- **Repository pattern:** `UserRepository` is an abstract interface;
-  `JsonUserRepository` is the JSON implementation. The service depends only on
-  the interface (Dependency Inversion).
+- **Interfaces for every part:** `RowParser`, `RowValidator` and
+  `UserRepository` are abstract interfaces; `CsvParser`, `UserValidator` and
+  `JsonUserRepository` implement them. The service depends only on the
+  interfaces (Dependency Inversion), so a new parser, validator or storage can
+  be added without changing it (Open/Closed). Only `cli.py` picks the concrete
+  classes.
+- **Repository pattern:** `UserRepository` hides how users are stored;
+  `JsonUserRepository` is the JSON implementation.
 - **Dataclasses:** `User` (frozen), `RawRow`, `ImportSummary`, `RowProblem`.
 - **Context managers:** `open_csv()` always closes the CSV file;
   `atomic_write()` writes to a temporary file and replaces the database only when
@@ -494,13 +509,13 @@ ImporterError
 
 ## Logging
 
-Every module logs with `logging.getLogger(__name__)`; `logging_config.py`
+Every module logs with `logging.getLogger(__name__)`; `utils/logging_config.py`
 configures handlers once, from the CLI.
 
 ```
-2026-10-14 16:49:35 | INFO     | importer.service | Imported user U101
-2026-10-14 16:49:35 | WARNING  | importer.service | Skipped row: Line 3: invalid 'name' (value is empty)
-2026-10-14 16:49:35 | INFO     | importer.repository | Saved 2 users to output\users.json
+2026-10-14 16:49:35 | INFO     | importer.services.import_service | Imported user U101
+2026-10-14 16:49:35 | WARNING  | importer.services.import_service | Skipped row: Line 3: invalid 'name' (value is empty)
+2026-10-14 16:49:35 | INFO     | importer.repositories.json_repository | Saved 2 users to output\users.json
 ```
 
 | Level | Used for |
@@ -531,12 +546,13 @@ python -m poetry run python -m pytest --cov --cov-report=html
 
 | Test file | Covers | Techniques |
 |---|---|---|
-| `test_parser.py` | valid and invalid CSV files, missing file, file system error | parametrize, `tmp_path`, mocker |
-| `test_validator.py` | valid row, invalid rows | parametrize |
-| `test_repository.py` | save and load, duplicate user, failed write | `tmp_path`, mocker |
-| `test_service.py` | valid row saved, missing CSV saves nothing (all parts mocked) | pytest-mock (`create_autospec`) |
-| `test_integration.py` | real files end to end through the CLI | no mocks |
+| `unit/test_parser.py` | valid and invalid CSV files, missing file, file system error | parametrize, `tmp_path`, mocker |
+| `unit/test_validator.py` | valid row, invalid rows | parametrize |
+| `unit/test_repository.py` | save and load, duplicate user, failed write | `tmp_path`, mocker |
+| `unit/test_service.py` | valid row saved, missing CSV saves nothing (all parts mocked) | pytest-mock (`create_autospec`) |
+| `integration/test_integration.py` | real files end to end through the CLI | no mocks |
 
+Unit tests live in `tests/unit/` and end-to-end tests in `tests/integration/`.
 Shared fixtures in `tests/conftest.py` provide temporary CSV files, a temporary
 database path and a mock repository; `tests/helpers.py` builds sample rows.
 
@@ -559,7 +575,7 @@ All modules and public functions have Google-style docstrings.
 
 The project follows **Git Flow**:
 
-- `main`: released, stable code (tagged `v1.0.0`, `v2.0.0`)
+- `main`: released, stable code (tagged `v1.0.0`, `v2.0.0`, `v3.0.0`)
 - `develop`: integration branch; features are merged here through pull requests
 - `feature/*`: one branch per piece of work, created from `develop`
 - `release/*`: final checks before merging `develop` into `main`

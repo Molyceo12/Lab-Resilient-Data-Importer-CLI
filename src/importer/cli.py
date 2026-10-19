@@ -3,13 +3,12 @@
 import argparse
 import logging
 
-from importer.display import format_error, format_report
 from importer.exceptions import ImporterError
-from importer.logging_config import configure_logging
-from importer.parser import CsvParser
-from importer.repository import JsonUserRepository
-from importer.service import ImportService
-from importer.validator import UserValidator
+from importer.parsers import CsvParser
+from importer.repositories import JsonUserRepository
+from importer.services import ImportService
+from importer.utils import configure_logging, format_error, format_report
+from importer.validators import UserValidator
 
 logger = logging.getLogger(__name__)
 DEFAULT_DB = "output/users.json"

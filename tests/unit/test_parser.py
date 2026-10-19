@@ -7,7 +7,7 @@ import pytest
 from pytest_mock import MockerFixture
 
 from importer.exceptions import CsvFileNotFoundError, FileFormatError
-from importer.parser import CsvParser
+from importer.parsers import CsvParser
 
 HEADER = "user_id,name,email\n"
 ALICE = {"user_id": "U1", "name": "Alice", "email": "a@x.com"}
